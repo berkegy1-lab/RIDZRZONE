@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIDZR — THE 360° VANISH PLATFORM</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RIDZR">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22RIDZR%20360%20Transformation%22,%22short_name%22:%22RIDZR%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23000000%22,%22theme_color%22:%22%23000000%22,%22orientation%22:%22portrait%22}">
+
+    <style>
+        :root {
+            --font-ar: 'IBM Plex Sans Arabic', sans-serif;
+            --font-en: 'Courier New', monospace;
+            --accent: #ff3333;
+        }
+
+        body {
+            background-color: black;
+            color: white;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-ar);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+            text-align: center;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 1100px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .active { display: block; }
+
+        h1, h2, h3, h4 { font-weight: 600; letter-spacing: 1px; margin-top: 0; text-align: center; }
+        .en-brand { font-family: var(--font-en); font-weight: bold; color: white; letter-spacing: 3px; }
+
+        button {
+            background-color: transparent;
+            border: 1px solid white;
+            color: white;
+            padding: 12px 24px;
+            margin: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        button:hover { background-color: white; color: black; }
+        
+        .btn-premium { border-color: var(--accent); color: var(--accent); font-weight: bold; }
+        .btn-premium:hover { background-color: var(--accent); color: white; }
+
+        input, textarea {
+            background-color: black; color: white; border: 1px solid white;
+            padding: 14px; margin: 10px 0; width: 100%; max-width: 400px; box-sizing: border-box;
+            font-family: inherit; font-size: 16px; text-align: center;
+        }
+
+        /* شريط إشعار تثبيت التطبيق المطور PWA Banner */
+        .pwa-install-banner {
+            display: none;
+            background: #111;
+            border: 1px solid #333;
+            padding: 15px;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 450px;
+            z-index: 9999;
+            box-shadow: 0 0 20px rgba(255, 51, 51, 0.2);
+            text-align: center;
+        }
+
+        .paywall-box {
+            background: #0d0d0d;
+            border: 1px solid #222;
+            padding: 40px;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 0 30px rgba(255, 51, 51, 0.1);
+        }
+
+        .dashboard-grid {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 30px;
+        }
+        @media (min-width: 950px) {
+            .dashboard-grid { flex-direction: row; align-items: flex-start; }
+        }
+
+        .grid-side { width: 100%; max-width: 520px; box-sizing: border-box; }
+        .charts-side { background: #080808; border: 1px solid #1a1a1a; padding: 20px; }
+
+        .stats-ribbon {
+            background: #111; border: 1px solid #222; padding: 15px; margin-bottom: 20px;
+            display: flex; justify-content: space-around; font-size: 15px; width: 100%; max-width: 1060px; box-sizing: border-box;
+        }
+        .rank-badge { color: gold; font-weight: bold; }
+
+        .todo-list { text-align: center; margin: 0 auto 20px auto; padding: 0; list-style: none; width: 100%; }
+        .todo-item { background: #111; padding: 15px; margin-bottom: 12px; border: 1px solid #222; transition: all 0.3s ease; text-align: right; }
+        .todo-row { display: flex; align-items: center; justify-content: space-between; }
+        .todo-item input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-color: white; }
+        .todo-item label { cursor: pointer; font-size: 15px; user-select: none; flex-grow: 1; margin-right: 15px; }
+        
+        .proof-area { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #222; display: flex; align-items: center; gap: 10px; }
+        .proof-label { font-size: 12px; color: #888; background: #000; border: 1px dashed #444; padding: 4px 8px; cursor: pointer; }
+        .proof-preview { font-size: 11px; color: #00ffcc; display: none; }
+
+        .completed-item { border-color: #fff; }
+        .completed-item label { text-decoration: line-through; color: #666; }
+
+        .timer-container { background: #0d0d0d; border: 1px solid #222; padding: 15px; margin: 15px 0; font-family: var(--font-en); font-size: 18px; }
+        .timer-highlight { color: var(--accent); font-weight: bold; font-size: 22px; }
+
+        .chart-box { margin-bottom: 25px; background: #000; padding: 15px; border: 1px solid #222; }
+        .chart-container { position: relative; margin: auto; height: 180px; width: 100%; }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        .confetti {
+            position: fixed; width: 10px; height: 10px; background-color: #fff;
+            top: -10px; z-index: 999; animation: confetti-fall 2.5s linear forwards;
+        }
+        
+        .avatar-container { display: flex; justify-content: center; gap: 15px; margin: 20px 0; }
+        .avatar-option { width: 60px; height: 60px; border: 1px solid #444; display: flex; justify-content: center; align-items: center; font-size: 24px; cursor: pointer; transition: all 0.3s ease; }
+        .avatar-option.selected { border-color: white; background-color: #222; transform: scale(1.1); }
+        .reset-btn { font-size: 12px; border-color: #ff3333; color: #ff3333; margin-top: 20px; padding: 6px 12px; }
+        .reset-btn:hover { background-color: #ff3333; color: white; }
+    </style>
+</head>
+<body>
+
+    <div id="pwa-banner" class="pwa-install-banner">
+        <p style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600;">⚡ ثبت منصة RIDZR الآن على شاشتك للوصول السريع بدون روابط!</p>
+        <button onclick="triggerPWAInstall()" class="btn-premium" style="padding: 6px 15px; margin: 0 5px; font-size: 13px;">تثبيت كـ تطبيق 📱</button>
+        <button onclick="dismissPWABanner()" style="padding: 6px 15px; margin: 0 5px; font-size: 13px; border-color: #555; color: #aaa;">لاحقاً</button>
+    </div>
+
+    <div id="paywall-screen" class="screen active">
+        <h1 class="en-brand" style="font-size: 40px; margin-bottom: 10px;">RIDZR</h1>
+        <p style="color: #666; font-size: 14px; margin-bottom: 30px;">THE 360° PRIVATE HIGH-TICKET SYSTEM</p>
+        
+        <div class="paywall-box">
+            <h3 style="color: white; margin-bottom: 15px;">نظام تفعيل بريميوم المشتركين</h3>
+            <p style="color: #aaa; font-size: 13px; line-height: 1.6;">هذا التحدي متاح حصرياً للمشتركين الذين حصلوا على كود الولوج الخاص من كابتن الفريق.</p>
+            <input type="text" id="activation-code" placeholder="أدخل كود التفعيل المكون من 6 أرقام">
+            <br>
+            <button onclick="verifyAccessCode()" class="btn-premium" style="width: 100%; margin-top: 15px;">تفعيل الحساب وبدء الاختفاء ⚡</button>
+            <p style="color: #444; font-size: 11px; margin-top: 15px;">(كود التفعيل التجريبي المفتوح هو: <strong style="color:#666;">RIDZR10</strong>)</p>
+        </div>
+    </div>
+
+    <div id="arrival" class="screen">
+        <h1 class="en-brand">RIDZR</h1>
+        <p>مرحباً بك في النخبة المعزولة. لم تُخلق لتكون متاحاً طوال الوقت لجميع البشر.</p>
+        <button onclick="checkSavedSession()">ابدأ رحلة الـ 10 أيام</button>
+    </div>
+
+    <div id="identity" class="screen">
+        <h2>أنشئ هويتك الرياضية المستعارة</h2>
+        <input type="text" id="username-input" placeholder="اكتب اسمك المستعار هنا (مثال: الشبح)">
+        <p>اختر الأفاتار الخاص بك:</p>
+        <div class="avatar-container">
+            <div class="avatar-option" onclick="selectAvatar(this, '🥷')">🥷</div>
+            <div class="avatar-option" onclick="selectAvatar(this, '🦾')">🦾</div>
+            <div class="avatar-option" onclick="selectAvatar(this, '⚡')">⚡</div>
+            <div class="avatar-option" onclick="selectAvatar(this, '👑')">👑</div>
+        </div>
+        <button onclick="saveIdentity()">تفعيل نظام RIDZR</button>
+    </div>
+
+    <div id="dashboard" class="screen">
+        
+        <div class="stats-ribbon">
+            <div>اللاعب: <span id="display-avatar">🥷</span> <strong id="display-username" style="color: #fff;">Player</strong></div>
+            <div>🏆 مجموع النقاط: <strong id="score-counter" style="color: #00ffcc;">0</strong></div>
+            <div>👑 الرتبة الحالية: <span id="rank-badge" class="rank-badge">مبتدئ 🟩</span></div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="grid-side">
+                <h2>اليوم <span id="current-day-text">1</span> من 10</h2>
+                
+                <div class="timer-container">
+                    ⏳ الوقت المتبقي لانتهاء اليوم الحالي والانتقال التلقائي: 
+                    <br><span id="countdown-clock" class="timer-highlight">60:00</span>
+                    <br>
+                    <button onclick="freezeCurrentDay()" id="freeze-btn" class="btn-premium" style="font-size: 12px; padding: 5px 12px; margin-top: 10px;">🥶 تجميد العداد اليوم (متاح مرة واحدة)</button>
+                    <button style="font-size: 10px; border-color: #555; color: #555; padding: 2px 6px;" onclick="speedUpTimer()">تسريع الوقت للتجربة ⚡</button>
+                </div>
+
+                <p style="color: #aaa; font-size: 13px; margin-bottom: 15px;">📸 قم بإنجاز خطة اليوم ورفع صور الإثبات للكابتن:</p>
+
+                <ul class="todo-list">
+                    <li class="todo-item" id="item-0">
+                        <div class="todo-row"><label for="task-0">🕌 صلاة الفجر + الصلوات الخمس في وقتها</label><input type="checkbox" id="task-0" onchange="toggleTask(0)"></div>
+                        <div class="proof-area"><label class="proof-label" for="file-0">📸 ارفع إثبات الالتزام بالصلاة</label><input type="file" id="file-0" accept="image/*" style="display:none;" onchange="handleProofUpload(0)"><span class="proof-preview" id="proof-view-0">✔️ تم حفظ الإثبات</span></div>
+                    </li>
+                    <li class="todo-item" id="item-1">
+                        <div class="todo-row"><label for="task-1">📚 جلسة المذاكرة / التطوير الأولى (تركيز كامل)</label><input type="checkbox" id="task-1" onchange="toggleTask(1)"></div>
+                        <div class="proof-area"><label class="proof-label" for="file-1">📸 ارفع لقطة من جلسة الدراسة</label><input type="file" id="file-1" accept="image/*" style="display:none;" onchange="handleProofUpload(1)"><span class="proof-preview" id="proof-view-1">✔️ تم حفظ الإثبات</span></div>
+                    </li>
+                    <li class="todo-item" id="item-2">
+                        <div class="todo-row"><label for="task-2">📚 جلسة المذاكرة / التطوير الثانية</label><input type="checkbox" id="task-2" onchange="toggleTask(2)"></div>
+                        <div class="proof-area"><label class="proof-label" for="file-2">📸 ارفع لقطة من جلسة الدراسة الثانية</label><input type="file" id="file-2" accept="image/*" style="display:none;" onchange="handleProofUpload(2)"><span class="proof-preview" id="proof-view-2">✔️ تم حفظ الإثبات</span></div>
+                    </li>
+                    <li class="todo-item" id="item-3">
+                        <div class="todo-row"><label for="task-3">🚶‍♂️ مشي يومي مستمر من 15 إلى 20 دقيقة</label><input type="checkbox" id="task-3" onchange="toggleTask(3)"></div>
+                        <div class="proof-area"><label class="proof-label" for="file-3">📸 ارفع لقطة من عداد المشي</label><input type="file" id="file-3" accept="image/*" style="display:none;" onchange="handleProofUpload(3)"><span class="proof-preview" id="proof-view-3">✔️ تم حفظ الإثبات</span></div>
+                    </li>
+                    <li class="todo-item" id="item-4">
+                        <div class="todo-row"><label for="task-4">🏋️‍♂️ تمرين الجيم الرياضي (Push-ups / Squats / Plank)</label><input type="checkbox" id="task-4" onchange="toggleTask(4)"></div>
+                        <div class="proof-area"><label class="proof-label" for="file-4">📸 ارفع صورتك من داخل الصالة</label><input type="file" id="file-4" accept="image/*" style="display:none;" onchange="handleProofUpload(4)"><span class="proof-preview" id="proof-view-4">✔️ تم حفظ الإثبات</span></div>
+                    </li>
+                    <li class="todo-item" id="item-5">
+                        <div class="todo-row"><label for="task-5">🍗 التغذية الرياضية: إدخال 2500+ سعرة حرارية</label><input type="checkbox" id="task-5" onchange="toggleTask(5)"></div>
+                        <div class="proof-area"><label class="proof-label" for="file-5">📸 ارفع صورة وجبات اليوم الرئيسية</label><input type="file" id="file-5" accept="image/*" style="display:none;" onchange="handleProofUpload(5)"><span class="proof-preview" id="proof-view-5">✔️ تم حفظ الوجبة</span></div>
+                    </li>
+                    <li class="todo-item" id="item-6">
+                        <div class="todo-row"><label for="task-6">🥚 تناول نسبة البروتين اليومية (80-95 جرام بروتين)</label><input type="checkbox" id="task-6" onchange="toggleTask(6)"></div>
+                        <div class="proof-area"><label class="proof-label" for="file-6">📸 ارفع مصادر البروتين المتناولة اليوم</label><input type="file" id="file-6" accept="image/*" style="display:none;" onchange="handleProofUpload(6)"><span class="proof-preview" id="proof-view-6">✔️ تم حفظ الإثبات</span></div>
+                    </li>
+                    <li class="todo-item" id="item-7">
+                        <div class="todo-row"><label for="task-7">💧 شرب 2.5 لتر ماء أو أكثر على مدار اليوم</label><input type="checkbox" id="task-7" onchange="toggleTask(7)"></div>
+                        <div class="proof-area"><label class="proof-label" for="file-7">📸 ارفع صورة زجاجة المياه ومعدل الشرب</label><input type="file" id="file-7" accept="image/*" style="display:none;" onchange="handleProofUpload(7)"><span class="proof-preview" id="proof-view-7">✔️ تم حفظ الإثبات</span></div>
+                    </li>
+                    <li class="todo-item" id="item-8">
+                        <div class="todo-row"><label for="task-8">😴 الاستشفاء البدني: نوم عميق من 7.5 إلى 8.5 ساعات</label><input type="checkbox" id="task-8" onchange="toggleTask(8)"></div>
+                        <div class="proof-area"><label class="proof-label" for="file-8">📸 ارفع لقطة من برنامج تتبع النوم الفعلي</label><input type="file" id="file-8" accept="image/*" style="display:none;" onchange="handleProofUpload(8)"><span class="proof-preview" id="proof-view-8">✔️ تم حفظ الإثبات</span></div>
+                    </li>
+                </ul>
+
+                <button id="next-day-btn" onclick="advanceDay()" style="width: 100%; background-color: white; color: black; font-weight: bold; margin: 5px 0;">إتمام اليوم يدوياً والعبور فوراً ⚡</button>
+                <br>
+                <button onclick="resetAllData()" class="reset-btn">إعادة تعيين وبدء التحدي مجدداً 🔄</button>
+            </div>
+
+            <div class="grid-side charts-side">
+                <h3 style="border-bottom: 1px solid #222; padding-bottom: 10px; color:#aaa;">📊 لوحة التحليلات البيانية لايف</h3>
+                <div class="chart-box">
+                    <h4 style="font-size: 13px; color:#fff; margin-bottom:10px;">إنجاز مهام اليوم الحالي (Doughnut Chart)</h4>
+                    <div class="chart-container"><canvas id="todayDoughnutChart"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <h4 style="font-size: 13px; color:#fff; margin-bottom:10px;">معدل الالتزام والنمو التراكمي (Line Chart)</h4>
+                    <div class="chart-container"><canvas id="tenDaysLineChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="final" class="screen">
+        <h2 class="en-brand">RIDZR COMPLETED</h2>
+        <p>تهانينا يا بطل النخبة! لقد أتممت الـ 10 أيام بنجاح مذهل يضمن نتائجك الحالية البدنية.</p>
+        <textarea id="final-reflection" rows="5" placeholder="اكتب مذكراتك وتطور وزنك وقوة تمرينك هنا الحاصلة خلال الـ 10 أيام الحالية..."></textarea>
+        <button onclick="saveFinalReflection()">حفظ التقرير وإرساله للكابتن</button>
+    </div>
+
+    <div id="after" class="screen">
+        <h2 class="en-brand">THE END OF PHASE 1</h2>
+        <p>تم حفظ مذكراتك ورسوماتك البيانية بنجاح على جهازك الشخصي وسيرفر الكابتن بسرية تامة.</p>
+        <button onclick="resetAllData()" class="reset-btn">البدء مجدداً</button>
+    </div>
+
+    <script>
+        const TOTAL_DAYS = 10;
+        const TOTAL_TASKS = 9;
+        const ONE_HOUR_IN_SECONDS = 3600; 
+
+        let state = {
+            isUnlocked: false, 
+            username: '',
+            avatar: '🥷',
+            currentDay: 1,
+            tasksStatus: [false, false, false, false, false, false, false, false, false],
+            historyPerformance: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            secondsLeft: ONE_HOUR_IN_SECONDS,
+            totalScore: 0, 
+            isFrozen: false, 
+            hasUsedFreeze: false 
+        };
+
+        let todayChartInstance = null;
+        let lineChartInstance = null;
+        let timerInterval = null;
+        let deferredPrompt = null; // لتخزين حدث تثبيت الـ PWA
+
+        // ==========================================
+        // 📲 محرك الـ PWA والتثبيت التلقائي الذكي على الهاتف
+        // ==========================================
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // منع المتصفح من إظهار النافذة التلقائية البايخة
+            e.preventDefault();
+            // حفظ الحدث عشان نشغله لما المستخدم يضغط على الزرار بتاعنا
+            deferredPrompt = e;
+            // إظهار البنر الفخم اللي صممناه فوق في الصفحة
+            document.getElementById('pwa-banner').style.display = 'block';
+        });
+
+        function triggerPWAInstall() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt(); // إظهار نافذة التثبيت الحقيقية للموبايل
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the RIDZR installation');
+                    }
+                    dismissPWABanner();
+                });
+            }
+        }
+
+        function dismissPWABanner() {
+            document.getElementById('pwa-banner').style.display = 'none';
+        }
+
+        // تسجيل الـ Service Worker كود وهمي مدمج لتفعيل ميزة التطبيق بالكامل بدون ملف خارجي
+        if ('serviceWorker' in navigator) {
+            const swCode = `self.addEventListener('fetch', function(event) { event.respondWith(fetch(event.request)); });`;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl).catch(err => console.log('SW registration skipped or offline'));
+        }
+
+        // ==========================================
+        // 🎮 محرك تشغيل وظائف المنصة الأساسية
+        // ==========================================
+        function nextScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function verifyAccessCode() {
+            let codeInput = document.getElementById('activation-code').value.trim();
+            if (codeInput.toUpperCase() === "RIDZR10") {
+                state.isUnlocked = true;
+                saveStateToStorage();
+                nextScreen('arrival');
+            } else {
+                alert("❌ كود التفعيل غير صحيح! يرجى التواصل مع الكابتن للحصول على الكود الفعال.");
+            }
+        }
+
+        function selectAvatar(element, avatarChar) {
+            document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+            element.classList.add('selected');
+            state.avatar = avatarChar;
+        }
+
+        function checkSavedSession() {
+            let savedState = localStorage.getItem('ridzr_v360_premium_state');
+            if (savedState) {
+                state = JSON.parse(savedState);
+                if (!state.isUnlocked) { nextScreen('paywall-screen'); return; }
+                if (state.currentDay > TOTAL_DAYS) { nextScreen('final'); } 
+                else { nextScreen('dashboard'); loadDashboardData(); initCharts(); startTimer(); }
+            } else { nextScreen('identity'); }
+        }
+
+        function saveIdentity() {
+            let nameInput = document.getElementById('username-input').value.trim();
+            if (nameInput === '') { alert('من فضلك اكتب اسماً مستعاراً لتبدأ به خطة النخبة.'); return; }
+            state.username = nameInput;
+            state.secondsLeft = ONE_HOUR_IN_SECONDS;
+            saveStateToStorage();
+            nextScreen('dashboard');
+            loadDashboardData();
+            initCharts();
+            startTimer();
+        }
+
+        function loadDashboardData() {
+            document.getElementById('display-username').textContent = state.username;
+            document.getElementById('display-avatar').textContent = state.avatar;
+            document.getElementById('current-day-text').textContent = state.currentDay;
+            document.getElementById('score-counter').textContent = state.totalScore;
+            
+            updateRankBadge();
+
+            for (let i = 0; i < TOTAL_TASKS; i++) {
+                let checkbox = document.getElementById(`task-${i}`);
+                let itemRow = document.getElementById(`item-${i}`);
+                checkbox.checked = state.tasksStatus[i];
+                if (state.tasksStatus[i]) { itemRow.classList.add('completed-item'); } 
+                else { itemRow.classList.remove('completed-item'); }
+            }
+            
+            let freezeBtn = document.getElementById('freeze-btn');
+            if(state.hasUsedFreeze) {
+                freezeBtn.disabled = true; freezeBtn.textContent = "🥶 تم استخدام ميزة تجميد الأيام مسبقاً";
+                freezeBtn.style.borderColor = "#333"; freezeBtn.style.color = "#555";
+            } else if (state.isFrozen) {
+                freezeBtn.textContent = "❄️ اليوم مجمد حالياً بنجاح (اضغط للإلغاء)";
+                freezeBtn.style.borderColor = "#00ffcc"; freezeBtn.style.color = "#00ffcc";
+            }
+            updateClockDisplay();
+        }
+
+        function updateRankBadge() {
+            let badge = document.getElementById('rank-badge');
+            if (state.totalScore < 100) { badge.innerHTML = "مبتدئ 🟩"; badge.style.color = "#00ffcc"; } 
+            else if (state.totalScore >= 100 && state.totalScore < 300) { badge.innerHTML = "محارب 🟨"; badge.style.color = "gold"; } 
+            else if (state.totalScore >= 300 && state.totalScore < 600) { badge.innerHTML = "الشبح 🟥"; badge.style.color = "#ff3333"; } 
+            else { badge.innerHTML = "النخبة 👑"; badge.style.color = "#ff00ff"; }
+        }
+
+        function startTimer() {
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!state.isFrozen) { state.secondsLeft--; }
+                updateClockDisplay();
+                saveStateToStorage();
+                if (state.secondsLeft <= 0) { clearInterval(timerInterval); advanceDay(); }
+            }, 1000);
+        }
+
+        function updateClockDisplay() {
+            let minutes = Math.floor(state.secondsLeft / 60);
+            let seconds = state.secondsLeft % 60;
+            let displayMin = minutes < 10 ? '0' + minutes : minutes;
+            let displaySec = seconds < 10 ? '0' + seconds : seconds;
+            
+            if (state.isFrozen) { document.getElementById('countdown-clock').textContent = "PAUSED (❄️)"; } 
+            else { document.getElementById('countdown-clock').textContent = `${displayMin}:${displaySec}`; }
+        }
+
+        function freezeCurrentDay() {
+            if (state.hasUsedFreeze && !state.isFrozen) return;
+            state.isFrozen = !state.isFrozen;
+            if (state.isFrozen) { state.hasUsedFreeze = true; }
+            saveStateToStorage();
+            loadDashboardData();
+        }
+
+        function speedUpTimer() { state.secondsLeft = 3; state.isFrozen = false; updateClockDisplay(); }
+
+        function triggerConfettiEffect() {
+            for(let i=0; i<20; i++) {
+                let confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = ['#fff', '#ff3333', '#00ffcc', 'gold'][Math.floor(Math.random()*4)];
+                confetti.style.width = Math.random() * 8 + 6 + 'px';
+                confetti.style.height = confetti.style.width;
+                confetti.style.animationDelay = Math.random() * 0.4 + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 2500);
+            }
+        }
+
+        function toggleTask(index) {
+            let checkbox = document.getElementById(`task-${index}`);
+            let itemRow = document.getElementById(`item-${index}`);
+            state.tasksStatus[index] = checkbox.checked;
+            
+            if (checkbox.checked) {
+                itemRow.classList.add('completed-item'); state.totalScore += 10; triggerConfettiEffect();
+            } else {
+                itemRow.classList.remove('completed-item'); state.totalScore = Math.max(0, state.totalScore - 10);
+            }
+            saveStateToStorage(); loadDashboardData(); updateTodayChart();
+        }
+
+        function handleProofUpload(index) {
+            let fileInput = document.getElementById(`file-${index}`);
+            if(fileInput.files.length > 0) {
+                document.getElementById(`proof-view-${index}`).style.display = "inline-block";
+                state.totalScore += 5; saveStateToStorage(); loadDashboardData();
+            }
+        }
+
+        function advanceDay() {
+            let completedTodayCount = state.tasksStatus.filter(status => status === true).length;
+            state.historyPerformance[state.currentDay - 1] = completedTodayCount;
+
+            state.currentDay++;
+            state.tasksStatus = [false, false, false, false, false, false, false, false, false];
+            state.secondsLeft = ONE_HOUR_IN_SECONDS; 
+            state.isFrozen = false; 
+            saveStateToStorage();
+
+            if (state.currentDay > TOTAL_DAYS) {
+                if(timerInterval) clearInterval(timerInterval); nextScreen('final');
+            } else {
+                loadDashboardData(); updateTodayChart(); updateLineChart(); startTimer();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function saveStateToStorage() { localStorage.setItem('ridzr_v360_premium_state', JSON.stringify(state)); }
+        function saveFinalReflection() { localStorage.setItem('ridzr_v360_premium_note', document.getElementById('final-reflection').value.trim()); nextScreen('after'); }
+
+        function resetAllData() {
+            if (confirm('هل أنت متأكد من رغبتك في إعادة تعيين كافة البيانات؟')) {
+                if(timerInterval) clearInterval(timerInterval);
+                let unlockedBackup = state.isUnlocked;
+                localStorage.removeItem('ridzr_v360_premium_state');
+                localStorage.removeItem('ridzr_v360_premium_note');
+                state = { isUnlocked: unlockedBackup, username: '', avatar: '🥷', currentDay: 1, tasksStatus: [false, false, false, false, false, false, false, false, false], historyPerformance: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], secondsLeft: ONE_HOUR_IN_SECONDS, totalScore: 0, isFrozen: false, hasUsedFreeze: false };
+                document.getElementById('username-input').value = '';
+                nextScreen('arrival');
+            }
+        }
+
+        // ==========================================
+        // 📊 محرك الرسوم البيانية
+        // ==========================================
+        function initCharts() {
+            let ctxDoughnut = document.getElementById('todayDoughnutChart').getContext('2d');
+            let doneCount = state.tasksStatus.filter(s => s === true).length;
+            let remainCount = TOTAL_TASKS - doneCount;
+
+            todayChartInstance = new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['منجز', 'متبقي'],
+                    datasets: [{ data: [doneCount, remainCount], backgroundColor: ['#ffffff', '#222222'], borderColor: ['#000000', '#000000'], borderWidth: 2 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#aaa', font: { family: 'IBM Plex Sans Arabic' } } } } }
+            });
+
+            let ctxLine = document.getElementById('tenDaysLineChart').getContext('2d');
+            lineChartInstance = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: ['يوم 1', 'يوم 2', 'يوم 3', 'يوم 4', 'يوم 5', 'يوم 6', 'يوم 7', 'يوم 8', 'يوم 9', 'يوم 10'],
+                    datasets: [{ label: 'المهام المنجزة', data: state.historyPerformance, borderColor: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 2, pointBackgroundColor: '#ffffff', pointBorderColor: '#000000', pointRadius: 4, tension: 0.2 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: TOTAL_TASKS, ticks: { stepSize: 1, color: '#666' }, grid: { color: '#111' } }, x: { ticks: { color: '#666', font: { family: 'IBM Plex Sans Arabic' } }, grid: { display: false } } } }
+            });
+        }
+
+        function updateTodayChart() {
+            if (!todayChartInstance) return;
+            let doneCount = state.tasksStatus.filter(s => s === true).length;
+            todayChartInstance.data.datasets[0].data = [doneCount, TOTAL_TASKS - doneCount];
+            todayChartInstance.update();
+        }
+
+        function updateLineChart() { if (lineChartInstance) { lineChartInstance.data.datasets[0].data = state.historyPerformance; lineChartInstance.update(); } }
+
+        // فحص الذاكرة عند فتح التطبيق لأول مرة
+        let savedState = localStorage.getItem('ridzr_v360_premium_state');
+        if (savedState) { let parsed = JSON.parse(savedState); if(parsed.isUnlocked) { nextScreen('arrival'); } }
+    </script>
+</body>
+</html>
